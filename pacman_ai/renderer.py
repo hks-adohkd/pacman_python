@@ -1,21 +1,26 @@
 from __future__ import annotations
 
-import curses
+import importlib.util
+import os
 import time
+from typing import Callable
 
-from .game import GameState
+from .game import Direction, GameState
 
 
-KEYMAP = {
-    curses.KEY_UP: "UP",
-    curses.KEY_DOWN: "DOWN",
-    curses.KEY_LEFT: "LEFT",
-    curses.KEY_RIGHT: "RIGHT",
-    ord("w"): "UP",
-    ord("s"): "DOWN",
-    ord("a"): "LEFT",
-    ord("d"): "RIGHT",
-}
+def has_curses_support() -> bool:
+    return importlib.util.find_spec("_curses") is not None and os.isatty(0) and os.isatty(1)
+
+
+def key_to_direction(key: str) -> Direction:
+    mapping = {
+        "w": Direction.UP,
+        "a": Direction.LEFT,
+        "s": Direction.DOWN,
+        "d": Direction.RIGHT,
+        "": Direction.STAY,
+    }
+    return mapping.get(key.lower(), Direction.STAY)
 
 
 def render_ascii(state: GameState) -> str:
@@ -31,24 +36,84 @@ def render_ascii(state: GameState) -> str:
     return "\n".join("".join(row) for row in grid)
 
 
-def run_curses_game(loop_step):
+def run_curses_game(
+    loop_step: Callable[[int], tuple[bool, GameState]],
+    initial_state: GameState,
+    auto: bool = False,
+    step_interval: float = 1.0,
+) -> None:
+    import curses
+
+    keymap = {
+        curses.KEY_UP: "UP",
+        curses.KEY_DOWN: "DOWN",
+        curses.KEY_LEFT: "LEFT",
+        curses.KEY_RIGHT: "RIGHT",
+        ord("w"): "UP",
+        ord("s"): "DOWN",
+        ord("a"): "LEFT",
+        ord("d"): "RIGHT",
+    }
+
     def wrapped(stdscr):
         curses.curs_set(0)
         stdscr.nodelay(True)
-        stdscr.timeout(120)
+        stdscr.timeout(80)
+        should_exit = False
+        state = initial_state
+        last_step_time = time.monotonic()
+
         while True:
-            key = stdscr.getch()
-            should_exit, state = loop_step(key)
+            raw_key = stdscr.getch()
+
+            if raw_key in (ord("q"), ord("Q")):
+                should_exit, state = loop_step(ord("q"))
+            elif auto:
+                now = time.monotonic()
+                if now - last_step_time >= step_interval:
+                    should_exit, state = loop_step(-1)
+                    last_step_time = now
+            elif raw_key in keymap:
+                normalized = ord(keymap[raw_key][0].lower())
+                should_exit, state = loop_step(normalized)
+
             stdscr.erase()
             stdscr.addstr(0, 0, render_ascii(state))
             stdscr.addstr(state.height + 1, 0, f"Score: {state.score}  Steps: {state.step_count}")
+            stdscr.addstr(state.height + 2, 0, "Controls: arrows/WASD to move, q to quit")
+            if auto:
+                stdscr.addstr(state.height + 3, 0, f"Auto speed: {1 / step_interval:.1f} moves/sec")
             if state.is_win:
-                stdscr.addstr(state.height + 2, 0, "You won! Press q to exit.")
+                stdscr.addstr(state.height + 4, 0, "You won! Press q to exit.")
             elif state.is_lose:
-                stdscr.addstr(state.height + 2, 0, "You lost! Press q to exit.")
+                stdscr.addstr(state.height + 4, 0, "You lost! Press q to exit.")
             stdscr.refresh()
-            if should_exit:
+            if should_exit or state.is_win or state.is_lose:
                 break
-            time.sleep(0.03)
+            time.sleep(0.02)
 
     curses.wrapper(wrapped)
+
+
+def run_text_game(
+    loop_step: Callable[[str], tuple[bool, GameState]],
+    initial_state: GameState,
+    auto: bool = False,
+    step_interval: float = 1.0,
+) -> None:
+    state = initial_state
+    while True:
+        key = ""
+        if not auto:
+            key = input("Move [WASD, Enter=stay, q=quit]: ").strip().lower()
+        should_exit, state = loop_step(key)
+        print(render_ascii(state))
+        print(f"Score: {state.score}  Steps: {state.step_count}")
+        if state.is_win:
+            print("You won!")
+        elif state.is_lose:
+            print("You lost!")
+        if should_exit or state.is_win or state.is_lose:
+            break
+        if auto:
+            time.sleep(step_interval)
