@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib.util
 import os
-import time
 from typing import Callable
 
 from .game import Direction, GameState
@@ -40,7 +39,6 @@ def run_curses_game(
     loop_step: Callable[[int], tuple[bool, GameState]],
     initial_state: GameState,
     auto: bool = False,
-    step_interval: float = 1.0,
 ) -> None:
     import curses
 
@@ -58,10 +56,9 @@ def run_curses_game(
     def wrapped(stdscr):
         curses.curs_set(0)
         stdscr.nodelay(True)
-        stdscr.timeout(80)
+        stdscr.timeout(120)
         should_exit = False
         state = initial_state
-        last_step_time = time.monotonic()
 
         while True:
             raw_key = stdscr.getch()
@@ -69,10 +66,7 @@ def run_curses_game(
             if raw_key in (ord("q"), ord("Q")):
                 should_exit, state = loop_step(ord("q"))
             elif auto:
-                now = time.monotonic()
-                if now - last_step_time >= step_interval:
-                    should_exit, state = loop_step(-1)
-                    last_step_time = now
+                should_exit, state = loop_step(-1)
             elif raw_key in keymap:
                 normalized = ord(keymap[raw_key][0].lower())
                 should_exit, state = loop_step(normalized)
@@ -81,16 +75,13 @@ def run_curses_game(
             stdscr.addstr(0, 0, render_ascii(state))
             stdscr.addstr(state.height + 1, 0, f"Score: {state.score}  Steps: {state.step_count}")
             stdscr.addstr(state.height + 2, 0, "Controls: arrows/WASD to move, q to quit")
-            if auto:
-                stdscr.addstr(state.height + 3, 0, f"Auto speed: {1 / step_interval:.1f} moves/sec")
             if state.is_win:
-                stdscr.addstr(state.height + 4, 0, "You won! Press q to exit.")
+                stdscr.addstr(state.height + 3, 0, "You won! Press q to exit.")
             elif state.is_lose:
-                stdscr.addstr(state.height + 4, 0, "You lost! Press q to exit.")
+                stdscr.addstr(state.height + 3, 0, "You lost! Press q to exit.")
             stdscr.refresh()
             if should_exit or state.is_win or state.is_lose:
                 break
-            time.sleep(0.02)
 
     curses.wrapper(wrapped)
 
@@ -99,7 +90,6 @@ def run_text_game(
     loop_step: Callable[[str], tuple[bool, GameState]],
     initial_state: GameState,
     auto: bool = False,
-    step_interval: float = 1.0,
 ) -> None:
     state = initial_state
     while True:
@@ -115,5 +105,3 @@ def run_text_game(
             print("You lost!")
         if should_exit or state.is_win or state.is_lose:
             break
-        if auto:
-            time.sleep(step_interval)

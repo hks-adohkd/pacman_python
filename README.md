@@ -34,7 +34,7 @@ python -m pacman_ai.main --mode manual --renderer text
 ### Auto mode (algorithmic)
 
 ```bash
-python -m pacman_ai.main --mode auto --algorithm astar --speed medium
+python -m pacman_ai.main --mode auto --algorithm astar
 ```
 
 Try alternatives:
@@ -46,11 +46,6 @@ python -m pacman_ai.main --mode auto --algorithm ucs
 python -m pacman_ai.main --mode auto --algorithm greedy
 ```
 
-Speed options for auto mode:
-
-- `--speed slow`: 1 move every 2 seconds
-- `--speed medium`: 1 move every 1 second
-- `--speed fast`: 2 moves every 1 second
 
 ## Project structure
 
@@ -67,8 +62,8 @@ Speed options for auto mode:
   - Sanity checks for search correctness.
 - `tests/test_renderer.py`
   - Keyboard input mapping checks.
-- `tests/test_main.py`
-  - Speed preset mapping checks.
+- `tests/test_gameplay.py`
+  - Movement behavior checks for Pacman and ghosts.
 
 ## Assignment ideas for students
 
