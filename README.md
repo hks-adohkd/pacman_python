@@ -21,20 +21,17 @@ Students can:
 
 ```bash
 python -m pacman_ai.main --mode manual
-# Windows-friendly text mode
-python -m pacman_ai.main --mode manual --renderer text
 ```
 
 ### Manual mode controls
 
-- Curses mode: Arrow keys or `WASD`
-- Text mode: type `w`, `a`, `s`, `d` then Enter
+- Arrow keys or `WASD`: move Pacman
 - `q`: quit
 
 ### Auto mode (algorithmic)
 
 ```bash
-python -m pacman_ai.main --mode auto --algorithm astar --speed medium
+python -m pacman_ai.main --mode auto --algorithm astar
 ```
 
 Try alternatives:
@@ -45,12 +42,6 @@ python -m pacman_ai.main --mode auto --algorithm dfs
 python -m pacman_ai.main --mode auto --algorithm ucs
 python -m pacman_ai.main --mode auto --algorithm greedy
 ```
-
-Speed options for auto mode:
-
-- `--speed slow`: 1 move every 2 seconds
-- `--speed medium`: 1 move every 1 second
-- `--speed fast`: 2 moves every 1 second
 
 ## Project structure
 
@@ -82,5 +73,4 @@ Speed options for auto mode:
 ## Notes
 
 - This project is terminal-based so it runs with only Python standard library.
-- On Windows (or terminals without curses), use `--renderer text` for a fully playable fallback.
 - Some IDE terminals may not fully support curses rendering. Run in a standard terminal if needed.
