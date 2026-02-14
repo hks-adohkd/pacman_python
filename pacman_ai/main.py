@@ -4,8 +4,14 @@ import argparse
 import sys
 
 from .algorithms import ALGORITHMS, choose_action
-from .game import Direction, load_level
+from .game import load_level
 from .renderer import has_curses_support, key_to_direction, run_curses_game, run_text_game
+
+SPEED_TO_INTERVAL = {
+    "slow": 2.0,
+    "medium": 1.0,
+    "fast": 0.5,
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -13,6 +19,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mode", choices=["manual", "auto"], default="manual", help="manual keyboard play or auto algorithmic control")
     parser.add_argument("--algorithm", choices=sorted(ALGORITHMS.keys()), default="astar", help="Algorithm used in auto mode")
     parser.add_argument("--max-steps", type=int, default=500)
+    parser.add_argument(
+        "--speed",
+        choices=["slow", "medium", "fast"],
+        default="medium",
+        help="auto mode speed: slow=1 move/2s, medium=1 move/s, fast=2 moves/s",
+    )
     parser.add_argument(
         "--renderer",
         choices=["auto", "curses", "text"],
@@ -43,6 +55,8 @@ def main() -> int:
         return False, state
 
     def step_with_int(key: int):
+        if args.mode == "manual" and key == -1:
+            return False, state
         if key == -1:
             normalized = ""
         else:
@@ -50,12 +64,13 @@ def main() -> int:
         return step_with_char(normalized)
 
     use_curses = args.renderer == "curses" or (args.renderer == "auto" and has_curses_support())
+    step_interval = SPEED_TO_INTERVAL[args.speed]
 
     if use_curses:
-        run_curses_game(step_with_int)
+        run_curses_game(step_with_int, initial_state=state, auto=args.mode == "auto", step_interval=step_interval)
     else:
         print("Using text renderer (curses unavailable or disabled).")
-        run_text_game(step_with_char, auto=args.mode == "auto")
+        run_text_game(step_with_char, initial_state=state, auto=args.mode == "auto", step_interval=step_interval)
 
     return 0
 

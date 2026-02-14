@@ -34,7 +34,7 @@ python -m pacman_ai.main --mode manual --renderer text
 ### Auto mode (algorithmic)
 
 ```bash
-python -m pacman_ai.main --mode auto --algorithm astar
+python -m pacman_ai.main --mode auto --algorithm astar --speed medium
 ```
 
 Try alternatives:
@@ -45,6 +45,12 @@ python -m pacman_ai.main --mode auto --algorithm dfs
 python -m pacman_ai.main --mode auto --algorithm ucs
 python -m pacman_ai.main --mode auto --algorithm greedy
 ```
+
+Speed options for auto mode:
+
+- `--speed slow`: 1 move every 2 seconds
+- `--speed medium`: 1 move every 1 second
+- `--speed fast`: 2 moves every 1 second
 
 ## Project structure
 
