@@ -11,6 +11,18 @@ def has_curses_support() -> bool:
     return importlib.util.find_spec("_curses") is not None and os.isatty(0) and os.isatty(1)
 
 
+
+
+def direction_token_to_input(direction: str) -> str:
+    mapping = {
+        "UP": "w",
+        "DOWN": "s",
+        "LEFT": "a",
+        "RIGHT": "d",
+        "STAY": "",
+    }
+    return mapping.get(direction, "")
+
 def key_to_direction(key: str) -> Direction:
     mapping = {
         "w": Direction.UP,
@@ -68,8 +80,9 @@ def run_curses_game(
             elif auto:
                 should_exit, state = loop_step(-1)
             elif raw_key in keymap:
-                normalized = ord(keymap[raw_key][0].lower())
-                should_exit, state = loop_step(normalized)
+                normalized_input = direction_token_to_input(keymap[raw_key])
+                if normalized_input:
+                    should_exit, state = loop_step(ord(normalized_input))
 
             stdscr.erase()
             stdscr.addstr(0, 0, render_ascii(state))
